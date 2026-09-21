@@ -11,10 +11,22 @@ class PokeApiProvider extends ChangeNotifier{
     return response;
   }
 
-  Future<http.Response> getGenerationDetail(int id) async{
+  Future<http.Response> getGenerationDetail(int id) async{//
     final url = Uri.https(_baseUrl, '$_apiPatch/generation/$id');
     final response = await http.get(url);
     return response;
   }
+
+  Future<http.Response> getGenerationSpeciesDetail(int id) async {
+  final url = Uri.https(_baseUrl, '$_apiPatch/pokemon-species/$id');
+  final response = await http.get(url);
+  return response;
+}
+
+Future<http.Response> getEvolutionChain(int id) async {
+  final url = Uri.https(_baseUrl, '$_apiPatch/evolution-chain/$id');
+  final response = await http.get(url);
+  return response;
+}
 
 }

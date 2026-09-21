@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 class GenerationDetailResponse{
-  final id;
+  final int id;
   final String name;
   final List <PokemonSpeciesItem> pokemonSpecies;
 

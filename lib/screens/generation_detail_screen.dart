@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pockeapi2026/models/generation_detail_response.dart';
 import 'package:pockeapi2026/providers/poke_api_provider.dart';
-import 'package:pockeapi2026/screens/pokemon_detail_screen.dart';
+import 'package:pockeapi2026/screens/generation_species_detail_screen.dart';
 
 
 class GenerationDetailScreen extends StatelessWidget {
@@ -52,7 +52,7 @@ class GenerationDetailScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PokemonDetailScreen(pokemonId: species.id, pokemonName: species.name),
+                        builder: (context) => GenerationSpeciesDetailScreen(pokemonId: species.id, pokemonName: species.name),
                       ),
                     );
                   },
