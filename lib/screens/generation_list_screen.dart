@@ -8,7 +8,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/poke_api_provider.dart';  
 
-
+// Primera pantalla de la app: lista todas las generaciones de pokemon
+// disponibles, cada una lleva a su propia cuadricula de pokemon
 class GenerationListScreen extends StatelessWidget {
   const GenerationListScreen ({super.key});
 
@@ -19,6 +20,8 @@ class GenerationListScreen extends StatelessWidget {
         title: Center(child: const Text('Generaciones')),
 
       ),
+      // Se pide la lista de generaciones usando el provider registrado en main.dart;
+      // listen:false porque aqui solo se necesita el dato una vez, no escuchar cambios
       body: FutureBuilder<http.Response>(
         future: Provider.of<PokeApiProvider>(context, listen: false).getGenerations(),
         builder: (context, snapshot) {
@@ -29,7 +32,10 @@ class GenerationListScreen extends StatelessWidget {
          }else if(!snapshot.hasData || snapshot.data!.statusCode != 200){
           return const Center(child: Text('Failed to load generations'),);
          }else{
+          // Se decodifica el json crudo y se transforma en el modelo de la lista
           final generationListResponse = GenerationListResponse.fromJson(json.decode(snapshot.data!.body));
+          // ListView.separated dibuja una lista vertical y permite poner
+          // un espacio (o cualquier widget) entre cada elemento
           return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: generationListResponse.results.length,
@@ -54,6 +60,8 @@ class GenerationListScreen extends StatelessWidget {
                     color: Colors.white,
                    ),
                    padding: const EdgeInsets.all(4),//el padding es para que el icono de la generacion no se vea grande
+                    // Image.asset carga una imagen guardada dentro del proyecto,
+                    // a diferencia de Image.network que la trae de internet
                     child: Image.asset(
                       'recursos/iconos/G${index + 1}.png',
                     fit: BoxFit.contain,//fit es para que el icono de la generacion se vea bien
@@ -79,6 +87,8 @@ class GenerationListScreen extends StatelessWidget {
                 ],//final de children
                   ),
                   onTap: (){
+                    // Al tocar una generacion, se navega a su cuadricula de pokemon,
+                    // el id se calcula con el indice de la lista (empieza en 0, la api en 1)
                     Navigator.push(
                       context,
                       MaterialPageRoute(

@@ -1,10 +1,11 @@
-
 import 'dart:convert';
 
+// Representa la respuesta del endpoint /generation, con el listado
+// completo de todas las generaciones existentes
 class GenerationListResponse {
   final int count;
-  final String? next;
-  final String? previous;
+  final String? next;     // url de la siguiente pagina de resultados, si existe
+  final String? previous;  // url de la pagina anterior, si existe
   final List<GenerationItem> results;
 
 GenerationListResponse({
@@ -31,6 +32,7 @@ factory GenerationListResponse.fromJson(Map<String, dynamic>json){
 
 }
 
+// Objeto simple con nombre y url, usado dentro de la lista de generaciones
 class GenerationItem{
   final String name;
   final String url;
@@ -63,5 +65,3 @@ int get id{
 }
 
 }//fin class
-
-

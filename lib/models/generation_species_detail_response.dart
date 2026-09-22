@@ -1,6 +1,8 @@
 import 'dart:convert';
 
-class GenerationSpeciesDetailResponse {
+// Representa la respuesta del endpoint /pokemon-species/{id}, trae
+// caracteristicas de la especie (color, habitat, descripcion, evoluciones, etc.)
+class PokemonSpeciesDetailResponse {
   final int id;
   final String name;
   final int order;
@@ -12,19 +14,19 @@ class GenerationSpeciesDetailResponse {
   final bool isMythical;
   final int hatchCounter;
 
-  final GenerationItem? habitat;      // puede ser null
-  final GenerationItem color;
-  final GenerationItem shape;
-  final GenerationItem growthRate;
-  final GenerationItem generation;
-  final GenerationItem? evolvesFromSpecies; // puede ser null
-  final GenerationItem evolutionChain; 
-  final List<GenerationItem> eggGroups;
+  final SpeciesItem? habitat;      // puede ser null
+  final SpeciesItem color;
+  final SpeciesItem shape;
+  final SpeciesItem growthRate;
+  final SpeciesItem generation;
+  final SpeciesItem? evolvesFromSpecies; // puede ser null
+  final SpeciesItem evolutionChain; 
+  final List<SpeciesItem> eggGroups;
 
   final String genus;
   final String flavorText;
 
-  GenerationSpeciesDetailResponse({
+  PokemonSpeciesDetailResponse({
     required this.id,
     required this.name,
     required this.order,
@@ -47,21 +49,23 @@ class GenerationSpeciesDetailResponse {
     required this.flavorText,
   });
 
-  factory GenerationSpeciesDetailResponse.fromRawJson(String str) =>
-      GenerationSpeciesDetailResponse.fromJson(json.decode(str));
+  factory PokemonSpeciesDetailResponse.fromRawJson(String str) =>
+      PokemonSpeciesDetailResponse.fromJson(json.decode(str));
 
-  factory GenerationSpeciesDetailResponse.fromJson(Map<String, dynamic> json) {
+  factory PokemonSpeciesDetailResponse.fromJson(Map<String, dynamic> json) {
    
+    // egg_groups llega como una lista de objetos {name, url}
     var eggGroupsList = json['egg_groups'] as List? ?? [];
-    List<GenerationItem> eggGroups =
-        eggGroupsList.map((i) => GenerationItem.fromJson(i)).toList();
+    List<SpeciesItem> eggGroups =
+        eggGroupsList.map((i) => SpeciesItem.fromJson(i)).toList();
 
     
+    // genera trae el mismo texto en varios idiomas; se busca primero español
     final generaList = json['genera'] as List? ?? [];
     final genusEntry = generaList.firstWhere(
       (g) => g['language']['name'] == 'es',
       orElse: () => generaList.firstWhere(
-        (g) => g['language']['name'] == 'en',
+        (g) => g['language']['name'] == 'en', // si no hay español, se usa ingles
         orElse: () => null,
       ),
     );
@@ -74,16 +78,16 @@ class GenerationSpeciesDetailResponse {
       (e) => e['language']['name'] == 'es',
       orElse: () => entries.firstWhere(
         (e) => e['language']['name'] == 'en',
-        orElse: () => entries.isNotEmpty ? entries.first : null,
+        orElse: () => entries.isNotEmpty ? entries.first : null, // si no hay ninguno de los dos, se toma el primero que exista
       ),
     );
       final flavorTextValue = textEntry != null
         ? (textEntry['flavor_text'] as String)
-            .replaceAll('\n', ' ')
-            .replaceAll('\f', ' ')
+            .replaceAll('\n', ' ') // quita saltos de linea sueltos dentro del texto
+            .replaceAll('\f', ' ') // quita saltos de pagina que a veces trae la api
         : 'Sin descripción disponible';
 
-    return GenerationSpeciesDetailResponse(
+    return PokemonSpeciesDetailResponse(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       order: json['order'] ?? 0,
@@ -94,17 +98,19 @@ class GenerationSpeciesDetailResponse {
       isLegendary: json['is_legendary'] ?? false,
       isMythical: json['is_mythical'] ?? false,
       hatchCounter: json['hatch_counter'] ?? 0,
+      // habitat puede venir null en el json, por eso se revisa antes de convertirlo
       habitat: json['habitat'] != null
-          ? GenerationItem.fromJson(json['habitat'])
+          ? SpeciesItem.fromJson(json['habitat'])
           : null,
-      color: GenerationItem.fromJson(json['color']),
-      shape: GenerationItem.fromJson(json['shape']),
-      growthRate: GenerationItem.fromJson(json['growth_rate']),
-      generation: GenerationItem.fromJson(json['generation']),
+      color: SpeciesItem.fromJson(json['color']),
+      shape: SpeciesItem.fromJson(json['shape']),
+      growthRate: SpeciesItem.fromJson(json['growth_rate']),
+      generation: SpeciesItem.fromJson(json['generation']),
+      // igual que habitat, este campo puede no existir si es la primera evolucion
       evolvesFromSpecies: json['evolves_from_species'] != null
-          ? GenerationItem.fromJson(json['evolves_from_species'])
+          ? SpeciesItem.fromJson(json['evolves_from_species'])
           : null,
-      evolutionChain: GenerationItem.fromJson(json['evolution_chain']),
+      evolutionChain: SpeciesItem.fromJson(json['evolution_chain']),
       eggGroups: eggGroups,
       genus: genusText,
       flavorText: flavorTextValue,
@@ -112,20 +118,22 @@ class GenerationSpeciesDetailResponse {
   }
 }
 
-class GenerationItem {
+// Objeto generico con nombre y url, reutilizado para varios campos
+// de la especie (color, forma, habitat, cadena evolutiva, etc.)
+class SpeciesItem {
   final String name;
   final String url;
 
-  GenerationItem({
+  SpeciesItem({
     required this.name,
     required this.url,
   });
 
-  factory GenerationItem.fromRawJson(String str) =>
-      GenerationItem.fromJson(json.decode(str));
+  factory SpeciesItem.fromRawJson(String str) =>
+      SpeciesItem.fromJson(json.decode(str));
 
-  factory GenerationItem.fromJson(Map<String, dynamic> json) {
-    return GenerationItem(
+  factory SpeciesItem.fromJson(Map<String, dynamic> json) {
+    return SpeciesItem(
       name: json['name'] ?? '',
       url: json['url'] ?? '',
     );

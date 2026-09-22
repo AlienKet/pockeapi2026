@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:pockeapi2026/models/generation_species_detail_response.dart';
 import 'package:pockeapi2026/providers/poke_api_provider.dart';
@@ -14,44 +14,23 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
     required this.pokemonName,
   }) : super(key: key);
 
+  // Arma la url del sprite oficial usando el id del pokemon
   String _spriteUrl(int id) =>
       'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png';
 
-  // Convierte el nombre del color que da la API a un Color de Flutter
+  // Genera un color distinto para cada nombre de color que devuelve la API
   Color _colorFromApi(String colorName) {
-    switch (colorName) {
-      case 'black':
-        return const Color(0xFF6E6E6E);
-      case 'blue':
-        return const Color(0xFF7FB2E5);
-      case 'brown':
-        return const Color(0xFFC2A17B);
-      case 'gray':
-        return const Color(0xFFBFC4C9);
-      case 'green':
-        return const Color(0xFF8FD48A);
-      case 'pink':
-        return const Color(0xFFF7A8C4);
-      case 'purple':
-        return const Color(0xFFB79CE0);
-      case 'red':
-        return const Color(0xFFEE8C8C);
-      case 'white':
-        return const Color(0xFFE8E8E8);
-      case 'yellow':
-        return const Color(0xFFF2CE4B);
-      default:
-        return const Color(0xFFBFC4C9);
-    }
+    final hash = colorName.hashCode; // convierte el texto en un numero
+    final hue = (hash % 360).toDouble(); // ese numero se ajusta a la rueda de color (0-360)
+    return HSLColor.fromAHSL(1.0, hue, 0.45, 0.65).toColor(); // tono pastel parejo para todos
   }
 
-  // Trae el detalle de la especie y, con el id de la cadena evolutiva,
-  // busca cual es la siguiente evolucion de este pokemon (solo una).
-  Future<Map<String, dynamic>> _loadData() async {
-    final provider = PokeApiProvider();
+  // Pide el detalle de la especie y, si tiene, obtiene tambien su siguiente evolucion
+    Future<Map<String, dynamic>> _loadData(BuildContext context) async {
+      final provider = Provider.of<PokeApiProvider>(context, listen: false);
 
     final speciesResponse = await provider.getGenerationSpeciesDetail(pokemonId);
-    final detail = GenerationSpeciesDetailResponse.fromRawJson(speciesResponse.body);
+    final detail = PokemonSpeciesDetailResponse.fromRawJson(speciesResponse.body);
 
     Map<String, dynamic>? nextEvolution;
     try {
@@ -59,29 +38,29 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
           await provider.getEvolutionChain(detail.evolutionChain.id);
       nextEvolution = _findNextEvolution(chainResponse.body, detail.id);
     } catch (_) {
-      nextEvolution = null; // si falla la cadena, simplemente no se muestra el boton
+      nextEvolution = null; // si la peticion falla, no se muestra el boton
     }
 
     return {'detail': detail, 'next': nextEvolution};
   }
 
-  // Recorre el arbol de la cadena evolutiva buscando el nodo del pokemon actual
-  // y devuelve SOLO la primera especie a la que evoluciona (si existe).
+  // Recorre el arbol de la cadena evolutiva hasta ubicar al pokemon actual
+  // y regresa solo su primera evolucion, si existe
   Map<String, dynamic>? _findNextEvolution(String rawJson, int currentId) {
     final decoded = json.decode(rawJson);
     final chain = decoded['chain'];
 
     Map<String, dynamic>? buscar(Map<String, dynamic> node) {
-      final speciesItem = GenerationItem.fromJson(node['species']);
+      final speciesItem = SpeciesItem.fromJson(node['species']);
       final evolvesTo = node['evolves_to'] as List? ?? [];
 
       if (speciesItem.id == currentId) {
-        if (evolvesTo.isEmpty) return null; // ya es la ultima evolucion
-        final next = GenerationItem.fromJson(evolvesTo.first['species']);
+        if (evolvesTo.isEmpty) return null; // ya llego a su ultima forma
+        final next = SpeciesItem.fromJson(evolvesTo.first['species']);
         return {'id': next.id, 'name': next.name};
       }
 
-      // si no es este nodo, se sigue buscando en sus hijos
+      // continua bajando por las ramas del arbol hasta encontrar coincidencia
       for (final hijo in evolvesTo) {
         final resultado = buscar(hijo as Map<String, dynamic>);
         if (resultado != null) return resultado;
@@ -101,8 +80,10 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(pokemonName[0].toUpperCase() + pokemonName.substring(1)),
       ),
+      // FutureBuilder espera la respuesta de _loadData y reconstruye la pantalla
+      // segun el estado de esa peticion (cargando, error o datos listos)
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _loadData(),
+        future: _loadData(context),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -111,7 +92,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
           } else if (!snapshot.hasData) {
             return const Center(child: Text('No hay datos'));
           } else {
-            final detail = snapshot.data!['detail'] as GenerationSpeciesDetailResponse;
+            final detail = snapshot.data!['detail'] as PokemonSpeciesDetailResponse;
             final next = snapshot.data!['next'] as Map<String, dynamic>?;
 
             return SingleChildScrollView(
@@ -119,7 +100,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ---- Tarjeta de la imagen, con fondo segun el color del pokemon ----
+                  // Tarjeta principal: imagen del pokemon con fondo segun su color
                   Container(
                     height: 220,
                     width: double.infinity,
@@ -143,7 +124,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // Boton de evolucion (solo uno, si tiene siguiente evolucion)
+                        // El boton solo aparece cuando existe una siguiente evolucion
                         if (next != null)
                           Positioned(
                             right: 12,
@@ -151,9 +132,8 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                             child: _EvolutionButton(
                               nextName: next['name'] as String,
                               onTap: () {
-                                // push normal: apila la pantalla de la evolucion
-                                // encima de la actual, asi el boton "atras"
-                                // regresa a la evolucion anterior, no a la lista.
+                                // Se apila la nueva pantalla encima de la actual,
+                                // por eso "atras" regresa a la evolucion previa
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -171,7 +151,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // ---- Genus ----
+                  // Genus: categoria corta del pokemon, ej. "Mouse Pokémon"
                   if (detail.genus.isNotEmpty)
                     Text(
                       detail.genus,
@@ -183,14 +163,14 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                     ),
                   const SizedBox(height: 10),
 
-                  // ---- Descripcion ----
+                  // Texto descriptivo tomado del pokedex
                   Text(
                     detail.flavorText,
                     style: TextStyle(fontSize: 16, color: colorScheme.onSurface),
                   ),
                   const SizedBox(height: 16),
 
-                  // ---- Secciones ----
+                  // Bloque de caracteristicas fisicas
                   _SectionCard(
                     title: 'Detalles Físicos',
                     children: [
@@ -202,6 +182,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                     ],
                   ),
 
+                  // Bloque de datos evolutivos y de crecimiento
                   _SectionCard(
                     title: 'Crecimiento y Linaje',
                     children: [
@@ -218,6 +199,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                     ],
                   ),
 
+                  // Bloque de valores numericos relacionados con la captura
                   _SectionCard(
                     title: 'Estadísticas de Captura',
                     children: [
@@ -239,6 +221,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
                     ],
                   ),
 
+                  // Bloque con datos booleanos varios
                   _SectionCard(
                     title: 'Misc. Info',
                     children: [
@@ -260,7 +243,7 @@ class GenerationSpeciesDetailScreen extends StatelessWidget {
   }
 }
 
-// Boton con la flecha para pasar a la evolucion
+// Boton flotante con flecha que lleva a la siguiente evolucion
 class _EvolutionButton extends StatelessWidget {
   final String nextName;
   final VoidCallback onTap;
@@ -301,7 +284,7 @@ class _EvolutionButton extends StatelessWidget {
   }
 }
 
-// Tarjeta blanca con titulo que agrupa varias filas
+// Contenedor blanco reutilizable que agrupa un titulo con varias filas
 class _SectionCard extends StatelessWidget {
   final String title;
   final List<Widget> children;
@@ -339,7 +322,8 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
+// Fila simple de tipo "etiqueta: valor"
+class _InfoRow extends StatelessWidget { 
   final String label;
   final String value;
 
@@ -363,7 +347,7 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// Fila con barra de progreso para los valores numericos
+// Fila con barra de progreso para mostrar valores numericos de forma visual
 class _StatRow extends StatelessWidget {
   final String label;
   final int value;
@@ -373,7 +357,7 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // se limita entre 0 y 1 para que la barra nunca se pase
+    // El valor se limita entre 0 y 1 para que la barra nunca se desborde
     final porcentaje = (value / max).clamp(0.0, 1.0);
 
     return Padding(
