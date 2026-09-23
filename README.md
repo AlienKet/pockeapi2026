@@ -1,9 +1,5 @@
 # 📱 Documentación del Proyecto — PockeAPI 2026
 
-Este proyecto es una aplicación móvil desarrollada en **Flutter** que consume la **PokeAPI** para mostrar información de generaciones y Pokémon, a manera de Pokédex.
-
----
-
 ## 🎯 1. Propósito del Proyecto
 
 La aplicación permite al usuario **explorar las generaciones de Pokémon**, ver todos los Pokémon que pertenecen a cada una, y consultar el **detalle de cada especie** (color, hábitat, descripción, estadísticas de captura y evoluciones), consumiendo en tiempo real los datos públicos de la PokeAPI.
