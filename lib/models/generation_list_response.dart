@@ -1,13 +1,15 @@
-import 'dart:convert';
+import 'dart:convert'; // necesario para poder usar json.decode en los metodos fromRawJson
 
 // Representa la respuesta del endpoint /generation, con el listado
 // completo de todas las generaciones existentes
+
 class GenerationListResponse {
   final int count;
   final String? next;     // url de la siguiente pagina de resultados, si existe
   final String? previous;  // url de la pagina anterior, si existe
   final List<GenerationItem> results;
 
+// Constructor de la clase: recibe los datos ya listos para armar el objeto
 GenerationListResponse({
   required this.count,
   this.next,
@@ -19,13 +21,13 @@ factory GenerationListResponse.fromRawJson(String str) => GenerationListResponse
   
   //metodo para recibir el Map ya decodificado
 factory GenerationListResponse.fromJson(Map<String, dynamic>json){
-  var list=json['results'] as List? ?? [];
-  List<GenerationItem> resultsList=list.map((i) => GenerationItem.fromJson(i)).toList();
+  var list=json['results'] as List? ?? []; // si el campo no viene en el json, se usa una lista vacia como respaldo
+  List<GenerationItem> resultsList=list.map((i) => GenerationItem.fromJson(i)).toList(); // convierte cada elemento crudo de la lista en un objeto GenerationItem
 
   return GenerationListResponse(
-    count: json['count'] ?? 0,
-    next: json['next'],
-    previous: json['previous'],
+    count: json['count'] ?? 0, // total de generaciones que existen en la api
+    next: json['next'], // puede llegar null si ya no hay mas paginas
+    previous: json['previous'], // puede llegar null si es la primera pagina
     results: resultsList
   );
 }
@@ -37,14 +39,16 @@ class GenerationItem{
   final String name;
   final String url;
 
+// Constructor de la clase: recibe nombre y url ya definidos
 GenerationItem({
   required this.name,
   required this.url
 });
 
+// Metodo para recibir el texto plano (String) y convertirlo primero en Map antes de armar el objeto
 factory GenerationItem.fromRawJson(String str) => GenerationItem.fromJson(json.decode(str));
 
-factory GenerationItem.fromJson(Map<String, dynamic>json){
+factory GenerationItem.fromJson(Map<String, dynamic>json){ // arma el objeto GenerationItem a partir del Map ya decodificado
   return GenerationItem(
     name: json['name'] ?? '',
     url: json['url'] ?? ''

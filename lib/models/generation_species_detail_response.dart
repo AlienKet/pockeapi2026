@@ -63,7 +63,7 @@ class PokemonSpeciesDetailResponse {
     // genera trae el mismo texto en varios idiomas; se busca primero español
     final generaList = json['genera'] as List? ?? [];
     final genusEntry = generaList.firstWhere(
-      (g) => g['language']['name'] == 'es',
+      (g) => g['language']['name'] == 'es',//
       orElse: () => generaList.firstWhere(
         (g) => g['language']['name'] == 'en', // si no hay español, se usa ingles
         orElse: () => null,
@@ -73,6 +73,7 @@ class PokemonSpeciesDetailResponse {
 
     
      // flavor_text: primero se busca en español, si no hay se usa el inglés
+     //
     final entries = json['flavor_text_entries'] as List? ?? [];
     final textEntry = entries.firstWhere(
       (e) => e['language']['name'] == 'es',
@@ -81,6 +82,7 @@ class PokemonSpeciesDetailResponse {
         orElse: () => entries.isNotEmpty ? entries.first : null, // si no hay ninguno de los dos, se toma el primero que exista
       ),
     );
+    //
       final flavorTextValue = textEntry != null
         ? (textEntry['flavor_text'] as String)
             .replaceAll('\n', ' ') // quita saltos de linea sueltos dentro del texto
@@ -91,9 +93,9 @@ class PokemonSpeciesDetailResponse {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       order: json['order'] ?? 0,
-      genderRate: json['gender_rate'] ?? 0,
+      genderRate: json['gender_rate'] ?? 0, //
       captureRate: json['capture_rate'] ?? 0,
-      baseHappiness: json['base_happiness'] ?? 0,
+      baseHappiness: json['base_happiness'] ?? 0,//
       isBaby: json['is_baby'] ?? false,
       isLegendary: json['is_legendary'] ?? false,
       isMythical: json['is_mythical'] ?? false,
@@ -104,10 +106,10 @@ class PokemonSpeciesDetailResponse {
           : null,
       color: SpeciesItem.fromJson(json['color']),
       shape: SpeciesItem.fromJson(json['shape']),
-      growthRate: SpeciesItem.fromJson(json['growth_rate']),
+      growthRate: SpeciesItem.fromJson(json['growth_rate']),//
       generation: SpeciesItem.fromJson(json['generation']),
       // igual que habitat, este campo puede no existir si es la primera evolucion
-      evolvesFromSpecies: json['evolves_from_species'] != null
+      evolvesFromSpecies: json['evolves_from_species'] != null//
           ? SpeciesItem.fromJson(json['evolves_from_species'])
           : null,
       evolutionChain: SpeciesItem.fromJson(json['evolution_chain']),
@@ -129,9 +131,11 @@ class SpeciesItem {
     required this.url,
   });
 
+  //
   factory SpeciesItem.fromRawJson(String str) =>
       SpeciesItem.fromJson(json.decode(str));
 
+  //
   factory SpeciesItem.fromJson(Map<String, dynamic> json) {
     return SpeciesItem(
       name: json['name'] ?? '',
